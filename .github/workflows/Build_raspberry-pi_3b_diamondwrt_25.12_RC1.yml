@@ -41,7 +41,7 @@ env:
   REPO_IMMORTALWRT_2410SS_DIFF:         ${{ secrets.REPO_IMMORTALWRT_2410SS_DIFF }}
   # cmcc-xr30-emmc
   RASPBERRYPI_3B_IMWRT2410SS_PATCHES:   ${{ secrets.RASPBERRYPI_3B_IMWRT2410SS_PATCHES }}
-  RASPBERRYPI_3B_IMWRT2410SS_PROFILE:   ${{ secrets.RASPBERRYPI_3B_IMWRT2410SS_PROFILE }}
+  RASPBERRYPI_3B_IMWRT2512SS_PROFILE:   ${{ secrets.RASPBERRYPI_3B_IMWRT2512SS_PROFILE }}
   RASPBERRYPI_3B_IMWRT2410SS_ARCHIVE:   ${{ secrets.RASPBERRYPI_3B_IMWRT2410SS_ARCHIVE }}
   # token
   GH_TOKEN:                             ${{ secrets.ACCESS_TOKEN }}
@@ -253,7 +253,7 @@ jobs:
       working-directory: ./openwrt
       id: loadconfig
       run: |
-        ${{ secrets.RASPBERRYPI_3B_IMWRT2410SS_PROFILE }}
+        ${{ secrets.RASPBERRYPI_3B_IMWRT2512SS_PROFILE }}
         rm -rf files
         ${{ secrets.REPO_IMMORTALWRT_2410SS_DIFF }}
         ${{ secrets.ARGON_THEME_RPI }}

@@ -15,26 +15,35 @@ on:
   workflow_dispatch:
     inputs:
       restore_config:
-        description: 'Restore Configuration 🇯🇵 設定を復元'
-        type: boolean
-        default: false
-      telegram_notify:
-        description: 'Telegram Notification 🇯🇵 Telegram通知'
+        description: 'Restore Configuration  🇯🇵 設定を復元'
         type: boolean
         default: false
       upload_firmware:
-        description: 'Upload to Artifacts　 🇯🇵 Artifactに保存'
+        description: 'Upload FW to Artifacts 🇯🇵 Artifactに保存'
         type: boolean
         default: false
       upload_release:
-        description: 'Upload to Release　　 🇯🇵 Releaseに公開'
+        description: 'Upload FW to Release　 🇯🇵 Releaseに公開'
+        type: boolean
+        default: false
+      telegram_notify:
+        description: 'Telegram Notification  🇯🇵 Telegram通知'
+        type: boolean
+        default: true
+      clean_ccache:
+        description: 'Clean all old CCACHE   🇯🇵 CCACHEに削除'
+        required: false
         type: boolean
         default: false
   schedule:
     - cron: '0 19 * * 0'
+    
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  # diamondwrt 2410
+  # annawrt 2410
   REPO_IMMORTALWRT_SOURCE_LINK:         ${{ secrets.REPO_IMMORTALWRT_SOURCE_LINK }}
   REPO_IMMORTALWRT_2410SS_TREE:         ${{ secrets.REPO_IMMORTALWRT_2410SS_TREE }}
   REPO_IMMORTALWRT_2410SS_HEAD:         ${{ secrets.REPO_IMMORTALWRT_2410SS_HEAD }}
@@ -53,17 +62,22 @@ env:
   ACCESS_REPACKAGE:                     ${{ secrets.ACCESS_REPACKAGE }}
   # luci & packages repo
   PLUGIN_REPO_SLUG:                     ${{ secrets.PLUGIN_REPO_SLUG }}
-  PLUGIN_REPO_HEAD:                     ${{ secrets.PLUGIN_REPO_HEAD }}
+  PLUGIN_REPO_IMMORTALWRT_2410SS_HEAD:                     ${{ secrets.PLUGIN_REPO_IMMORTALWRT_2410SS_HEAD }}
   PLUGIN_REPO_FLOW:                     ${{ secrets.PLUGIN_REPO_FLOW }}
   # cmcc color sytle for argon
-  ARGON_THEME_RPI:                     ${{ secrets.ARGON_THEME_RPI }}
+  ARGON_THEME_RPI:                      ${{ secrets.ARGON_THEME_RPI }}
   # telegram bot
   TELEGRAM_BOT_KEY:                     ${{ secrets.TELEGRAM_BOT_KEY }}
   TELEGRAM_CHAT_ID:                     ${{ secrets.TELEGRAM_CHAT_ID }}
+  # input status
+  INPUT_RESTORE:                        ${{ github.event.inputs.restore_config }}
+  INPUT_ARTIFACT:                       ${{ github.event.inputs.upload_firmware }}
+  INPUT_RELEASE:                        ${{ github.event.inputs.upload_release }}
+  INPUT_CLEANCACHE:                     ${{ github.event.inputs.clean_ccache }}
   # hardware & repo info
   DEVICE_NAME:                          Raspberry-Pi_3B
   TARGET_CHIP:                          bcm2710
-  TARGET_DISK:                          TF-2G
+  TARGET_DISK:                          2G-TF
   SOURCE_CODE:                          immortalwrt
   KERNEL_VERS:                          kernel_6.6
   OUTPUT_FILE:                          diamondwrt-24.10ss-k6.6-bcm2710-raspberry-pi_3b-sysupgrade
@@ -102,7 +116,7 @@ jobs:
         if [ "$DO_SYNC" == "true" ]; then
           echo "🚀 Triggering workflow..."
 
-          if ! gh workflow run "$PLUGIN_REPO_FLOW" --repo "$PLUGIN_REPO_SLUG" --ref "$PLUGIN_REPO_HEAD"; then
+          if ! gh workflow run "$PLUGIN_REPO_FLOW" --repo "$PLUGIN_REPO_SLUG" --ref "$PLUGIN_REPO_IMMORTALWRT_2410SS_HEAD"; then
             echo "❌ Error: Failed to trigger the workflow."
             exit 1
           fi
@@ -231,12 +245,35 @@ jobs:
             sed -i '/.cn\//d; /tencent/d; /aliyun/d' "$PROJECT_MIRRORS_FILE"
           fi
 
+    - name: Prepare Cache Key (キャッシュキーの准备)
+      run: |
+        echo "CACHE_MONTH=$(date +%Y%m)" >> $GITHUB_ENV
+        
+        if [ "${{ github.event.inputs.clean_cache }}" = "true" ]; then
+            echo "CLEAN_MARK=_clean_$(date +%s)" >> $GITHUB_ENV
+        else
+            echo "CLEAN_MARK=" >> $GITHUB_ENV
+        fi
+
     - name: Cache Toolchain (ツールチェーンのキャッシュ)
       uses: HiGarfield/cachewrtbuild@main
       with:
         ccache: true
-        mixkey: BCM2710-[${{ env.SOURCE_CODE }}]-[${{ secrets.REPO_IMMORTALWRT_2410SS_TREE }}]-[${{ secrets.REPO_IMMORTALWRT_2410SS_HEAD }}]-[${{ env.KERNEL_VERS }}]
+        mixkey: BCM2710-[${{ env.CACHE_MONTH }}]-[${{ env.SOURCE_CODE }}]-[${{ secrets.REPO_IMMORTALWRT_2410SS_TREE }}]-[${{ secrets.REPO_IMMORTALWRT_2410SS_HEAD }}]-[${{ env.KERNEL_VERS }}]-[${{ env.CLEAN_MARK }}]
         prefix: ${{ github.workspace }}/openwrt
+
+    - name: Cache dl Directory (dlディレクトリのキャッシュ)
+      uses: actions/cache@v3
+      with:
+        path: openwrt/dl
+        key: ${{ runner.os }}-openwrt-dl-v3-${{ hashFiles('**/feeds.conf.default') }}
+        restore-keys: |
+          ${{ runner.os }}-openwrt-dl-v3-
+
+    - name: Surgical Clean Go Cache (Goキャッシュの物理削除)
+      run: |
+        rm -rf openwrt/dl/go-mod-cache
+        mkdir -p openwrt/dl/go-mod-cache
 
     - name: Update & Install Feeds (フィードの更新とインストール)
       working-directory: ./openwrt
@@ -293,12 +330,6 @@ jobs:
 
     - name: Notify Compilation Error (コンパイルエラーの通知)
       if: steps.compile.outcome != 'success' && (github.event.inputs.telegram_notify == 'true' || contains(github.event.action, 'telegram_notify')) && !cancelled()
-      env:
-        INPUT_RESTORE: ${{ github.event.inputs.restore_config }}
-        INPUT_ARTIFACT: ${{ github.event.inputs.upload_firmware }}
-        INPUT_RELEASE: ${{ github.event.inputs.upload_release }}
-        SOURCE_TREE: ${{ secrets.REPO_IMMORTALWRT_2410SS_TREE }}
-        SOURCE_HEAD: ${{ secrets.REPO_IMMORTALWRT_2410SS_HEAD }}
       run: |
         if [[ "$INPUT_RESTORE" == "true" ]] || [[ "$GITHUB_EVENT_ACTION" == *"restore_config"* ]]; then
             STAT_RESTORE="✅"
@@ -315,19 +346,25 @@ jobs:
         else
             STAT_RELEASE="⏺️"
         fi
+        if [[ "$INPUT_CLEANCACHE" == "true" ]] || [[ "$GITHUB_EVENT_ACTION" == *"clean_ccache"* ]]; then
+            STAT_CLEANCACHE="✅"
+        else
+            STAT_CLEANCACHE="⏺️"
+        fi
         MSG="❌ ビルドが失敗しました！ ❌"
         MSG="${MSG}%0A%0A＝＝＝＝＝  基 本 情 報 ＝＝＝＝＝＝"
         MSG="${MSG}%0A•🖥️対応機種:%0A　%20　${DEVICE_NAME}"
         MSG="${MSG}%0A•💿容量仕様:%0A　%20　${TARGET_DISK}"
         MSG="${MSG}%0A•🐧カーネル:%0A　%20　${KERNEL_VERS}"
         MSG="${MSG}%0A•👤ソース名:%0A　%20　${SOURCE_CODE}"
-        MSG="${MSG}%0A•🌲ソース元:%0A　%20　${SOURCE_TREE}"
-        MSG="${MSG}%0A•🌿ブランチ:%0A　%20　${SOURCE_HEAD}"
+        MSG="${MSG}%0A•🌲ソース元:%0A　%20　${REPO_IMMORTALWRT_2410SS_TREE}"
+        MSG="${MSG}%0A•🌿ブランチ:%0A　%20　${REPO_IMMORTALWRT_2410SS_HEAD}"
 
         MSG="${MSG}%0A%0A＝＝＝＝＝  状 態 一 覧 ＝＝＝＝＝＝"
         MSG="${MSG}%0A•⚙️設定復元:　%20　${STAT_RESTORE}"
         MSG="${MSG}%0A•💾構築成果:　%20　${STAT_ARTIFACT}"
         MSG="${MSG}%0A•🚀公開配信:　%20　${STAT_RELEASE}"
+        MSG="${MSG}%0A•🧹缓存消除:　%20　${STAT_CLEANCACHE}"
         
         MSG="${MSG}%0A%0A＝＝＝＝  エ ラ ー 情 報   ＝＝＝＝"
         MSG="${MSG}%0A•❌失敗時刻:%0A　%20　$(date +'%Y年%m月%d日_%H時%M分')"
@@ -344,10 +381,14 @@ jobs:
       if: steps.compile.outcome == 'success' && !cancelled()
       run: |
         cd openwrt/bin/targets/*/*
-        ls | grep -v *sysupgrade.img.gz | xargs rm -rdf
-        mv *.img.gz ${{ env.OUTPUT_FILE }}.img.gz
-        sha512sums ${{ secrets.ACCESS_SHA512SUM }} sha512sums ${{ env.OUTPUT_FILE }}.img.gz
-        ${{ secrets.ACCESS_REPACKAGE }} ${{ env.OUTPUT_FILE }}.img.gz
+      
+        FIRMWARE_FILE=$(ls *sysupgrade.* 2>/dev/null | head -n 1)
+        EXT="${FIRMWARE_FILE##*.}"
+
+        ls | grep -v "$FIRMWARE_FILE" | xargs rm -rdf
+        mv "$FIRMWARE_FILE" "${{ env.OUTPUT_FILE }}.$EXT"
+        sha512sums ${{ secrets.ACCESS_SHA512SUM }} sha512sums "${{ env.OUTPUT_FILE }}.$EXT"
+        ${{ secrets.ACCESS_REPACKAGE }} "${{ env.OUTPUT_FILE }}.$EXT"
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
     - name: Upload to Artifacts (Artifactに保存)
@@ -360,10 +401,6 @@ jobs:
     - name: Upload to Release (Releaseに公開)
       if: steps.organize.outcome == 'success' && (github.event.inputs.upload_release == 'true' || contains(github.event.action, 'upload_release')) && !cancelled()
       uses: actions/github-script@v7
-      env:
-        REPO_TREE: ${{ secrets.REPO_IMMORTALWRT_2410SS_TREE }}
-        REPO_HEAD: ${{ secrets.REPO_IMMORTALWRT_2410SS_HEAD }}
-        GITHUB_TOKEN: ${{ env.GH_TOKEN }}
       with:
         github-token: ${{ env.GH_TOKEN }}
         script: |
@@ -385,8 +422,8 @@ jobs:
           - 💿 容量仕様: ${env.TARGET_DISK}
           - 🐧 カーネル: ${env.KERNEL_VERS}
           - 👤 ソース名: ${env.SOURCE_CODE}
-          - 🌲 ソース元: ${env.REPO_TREE}
-          - 🌿 ブランチ: ${env.REPO_HEAD}
+          - 🌲 ソース元: ${env.REPO_IMMORTALWRT_2410SS_TREE}
+          - 🌿 ブランチ: ${env.REPO_IMMORTALWRT_2410SS_HEAD}
           - 🔗 管理ＩＰ: 192.168.***.1 または ${env.SOURCE_CODE}.lan
           - 🛡️ 初期パス: ********
           ### ⚠️ 免責事項 ⚠️
@@ -434,12 +471,6 @@ jobs:
 
     - name: Final Report & TG Notify (総合ステータス通知)
       if: steps.organize.outcome == 'success' && (github.event.inputs.telegram_notify == 'true' || contains(github.event.action, 'telegram_notify')) && !cancelled()
-      env:
-        INPUT_RESTORE: ${{ github.event.inputs.restore_config }}
-        INPUT_ARTIFACT: ${{ github.event.inputs.upload_firmware }}
-        INPUT_RELEASE: ${{ github.event.inputs.upload_release }}
-        SOURCE_TREE: ${{ secrets.REPO_IMMORTALWRT_2410SS_TREE }}
-        SOURCE_HEAD: ${{ secrets.REPO_IMMORTALWRT_2410SS_HEAD }}
       run: |
         if [[ "$INPUT_RESTORE" == "true" ]] || [[ "$GITHUB_EVENT_ACTION" == *"restore_config"* ]]; then
             STAT_RESTORE="✅"
@@ -456,20 +487,25 @@ jobs:
         else
             STAT_RELEASE="⏺️"
         fi
-
+        if [[ "$INPUT_CLEANCACHE" == "true" ]] || [[ "$GITHUB_EVENT_ACTION" == *"clean_ccache"* ]]; then
+            STAT_CLEANCACHE="✅"
+        else
+            STAT_CLEANCACHE="⏺️"
+        fi
         MSG="✅ビルドが正常に完了しました！✅"
         MSG="${MSG}%0A%0A＝＝＝＝＝  基 本 情 報 ＝＝＝＝＝＝"
         MSG="${MSG}%0A•🖥️対応機種:%0A　%20　${DEVICE_NAME}"
         MSG="${MSG}%0A•💿容量仕様:%0A　%20　${TARGET_DISK}"
         MSG="${MSG}%0A•🐧カーネル:%0A　%20　${KERNEL_VERS}"
         MSG="${MSG}%0A•👤ソース名:%0A　%20　${SOURCE_CODE}"
-        MSG="${MSG}%0A•🌲ソース元:%0A　%20　${SOURCE_TREE}"
-        MSG="${MSG}%0A•🌿ブランチ:%0A　%20　${SOURCE_HEAD}"
+        MSG="${MSG}%0A•🌲ソース元:%0A　%20　${REPO_IMMORTALWRT_2410SS_TREE}"
+        MSG="${MSG}%0A•🌿ブランチ:%0A　%20　${REPO_IMMORTALWRT_2410SS_HEAD}"
 
         MSG="${MSG}%0A%0A＝＝＝＝＝  状 態 一 覧 ＝＝＝＝＝＝"
         MSG="${MSG}%0A•⚙️設定復元:　%20　${STAT_RESTORE}"
         MSG="${MSG}%0A•💾構築成果:　%20　${STAT_ARTIFACT}"
         MSG="${MSG}%0A•🚀公開配信:　%20　${STAT_RELEASE}"
+        MSG="${MSG}%0A•🧹缓存消除:　%20　${STAT_CLEANCACHE}"
         
         MSG="${MSG}%0A%0A＝＝＝＝＝  下 載 信 息 ＝＝＝＝＝＝"
         MSG="${MSG}%0A•📦ファイル:%0A　%20　${OUTPUT_FILE}"

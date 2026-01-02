@@ -237,7 +237,7 @@ jobs:
       working-directory: ./
       run: |
         df -hT $PWD
-        git clone --depth 1 $REPO_IMMORTALWRT_SOURCE_LINKK -b $REPO_IMMORTALWRT_2512SS_HEAD openwrt
+        git clone --depth 1 $REPO_IMMORTALWRT_SOURCE_LINK -b $REPO_IMMORTALWRT_2512SS_HEAD openwrt
 
         # Remove China Mirrors (中国国内ミラーの削除)
         PROJECT_MIRRORS_FILE="scripts/projectsmirrors.json"

@@ -386,10 +386,10 @@ jobs:
       if: steps.compile.outcome == 'success' && !cancelled()
       run: |
         cd openwrt/bin/targets/*/*
-        ls | grep -v *sysupgrade.bin | xargs rm -rdf
-        mv *.bin ${{ env.OUTPUT_FILE }}.bin
-        sha512sums ${{ secrets.ACCESS_SHA512SUM }} sha512sums ${{ env.OUTPUT_FILE }}.bin
-        ${{ secrets.ACCESS_REPACKAGE }} ${{ env.OUTPUT_FILE }}.bin
+        ls | grep -v *sysupgrade.img.gz | xargs rm -rdf
+        mv *.img.gz ${{ env.OUTPUT_FILE }}.img.gz
+        sha512sums ${{ secrets.ACCESS_SHA512SUM }} sha512sums ${{ env.OUTPUT_FILE }}.img.gz
+        ${{ secrets.ACCESS_REPACKAGE }} ${{ env.OUTPUT_FILE }}.img.gz
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
     - name: Upload to Artifacts (Artifactに保存)

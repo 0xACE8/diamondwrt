@@ -295,6 +295,7 @@ jobs:
       run: |
         ${{ secrets.RASPBERRYPI_3B_IMWRT2512SS_PROFILE }}
         rm -rf feeds/luci/applications/luci-app-smartdns
+        rm -rf feeds/packages/net/smartdns
         rm -rf files
         ${{ secrets.REPO_IMMORTALWRT_2410SS_DIFF }}
         ${{ secrets.ARGON_THEME_CMCC }}

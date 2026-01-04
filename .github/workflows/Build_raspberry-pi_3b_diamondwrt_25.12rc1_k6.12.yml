@@ -262,7 +262,7 @@ jobs:
       uses: HiGarfield/cachewrtbuild@main
       with:
         ccache: true
-        mixkey: MT7981b-[${{ env.CACHE_MONTH }}]-[${{ env.SOURCE_CODE }}]-[${{ secrets.REPO_IMMORTALWRT_2410SS_TREE }}]-[${{ secrets.REPO_IMMORTALWRT_2512SS_HEAD }}]-[${{ env.KERNEL_VERS }}]-[${{ env.CLEAN_MARK }}]
+        mixkey: BCM2710-[${{ env.CACHE_MONTH }}]-[${{ env.SOURCE_CODE }}]-[${{ secrets.REPO_IMMORTALWRT_2410SS_TREE }}]-[${{ secrets.REPO_IMMORTALWRT_2512SS_HEAD }}]-[${{ env.KERNEL_VERS }}]-[${{ env.CLEAN_MARK }}]
         prefix: ${{ github.workspace }}/openwrt
 
     - name: Cache dl Directory (dlディレクトリのキャッシュ)
@@ -294,8 +294,7 @@ jobs:
       id: loadconfig
       run: |
         ${{ secrets.RASPBERRYPI_3B_IMWRT2512SS_PROFILE }}
-        sed -i 's/+smartdns \\/+smartdns/g' feeds/luci/applications/luci-app-smartdns/Makefile
-        sed -i '14,21d' feeds/luci/applications/luci-app-smartdns/Makefile
+        rm -rf feeds/luci/applications/luci-app-smartdns
         rm -rf files
         ${{ secrets.REPO_IMMORTALWRT_2410SS_DIFF }}
         ${{ secrets.ARGON_THEME_CMCC }}
@@ -531,7 +530,7 @@ jobs:
           const currentRunId = context.runId;
           
           const runs = await github.rest.actions.listWorkflowRunsForRepo({
-            owner, repo, per_page: 1
+            owner, repo, per_page: 2
           });
 
           const workflowGroups = {};
@@ -566,7 +565,7 @@ jobs:
       with:
         github-token: ${{ env.GH_TOKEN }}
         script: |
-          const keep_latest = 3;
+          const keep_latest = 2;
           const { owner, repo } = context.repo;
           const { data: releases } = await github.rest.repos.listReleases({ owner, repo, per_page: 100 });
           

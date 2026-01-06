@@ -523,42 +523,13 @@ jobs:
           -d text="${FINAL_MSG}"
 
     - name: Delete Old Workflows (古いワークフローの削除)
-      uses: actions/github-script@v7
+      uses: Mattraks/delete-workflow-runs@main
       with:
-        github-token: ${{ env.GH_TOKEN }}
-        script: |
-          const { owner, repo } = context.repo;
-          const currentRunId = context.runId;
-          
-          const runs = await github.rest.actions.listWorkflowRunsForRepo({
-            owner, repo, per_page: 2
-          });
-
-          const workflowGroups = {};
-          for (const run of runs.data.workflow_runs) {
-            if (!workflowGroups[run.workflow_id]) workflowGroups[run.workflow_id] = [];
-            workflowGroups[run.workflow_id].push(run);
-          }
-
-          for (const [id, list] of Object.entries(workflowGroups)) {
-            list.sort((a, b) => b.id - a.id);
-            let foundSuccess = false;
-
-            for (const run of list) {
-              if (run.id === currentRunId) continue;
-              if (run.status !== 'completed') continue;
-
-              if (!foundSuccess && run.conclusion === 'success') {
-                console.log(`✅ Keep last success: ${run.name} (#${run.run_number})`);
-                foundSuccess = true;
-                continue;
-              }
-              try {
-                await github.rest.actions.deleteWorkflowRun({ owner, repo, run_id: run.id });
-                console.log(`👋 Delete: ${run.name} (#${run.run_number})`);
-              } catch (e) {}
-            }
-          }
+        token: ${{ secrets.ACCESS_TOKEN }}
+        repository: ${{ github.repository }}
+        retain_days: 0
+        keep_minimum_runs: 1
+        delete_workflow_pattern: Build_raspberry-pi_3b_diamondwrt_25.12rc1_k6.12.yml
 
     - name: Delete Old Releases (古いリリースの削除)
       uses: actions/github-script@v7

@@ -15,33 +15,29 @@ on:
   workflow_dispatch:
     inputs:
       restore_config:
-        description: 'Restore Configuration  🇯🇵 設定を復元'
+        description: 'Restore Configuration. 🇯🇵 設定を復元'
         type: boolean
         default: false
       upload_firmware:
-        description: 'Upload FW to Artifacts 🇯🇵 Artifactに保存'
+        description: 'Upload to Artifacts... 🇯🇵 Artifactに保存'
         type: boolean
         default: false
       upload_release:
-        description: 'Upload FW to Release　 🇯🇵 Releaseに公開'
+        description: 'Upload to Releases.... 🇯🇵 Releaseに公開'
         type: boolean
         default: false
       telegram_notify:
-        description: 'Telegram Notification  🇯🇵 Telegram通知'
+        description: 'Telegram Notification. 🇯🇵 Telegram通知'
         type: boolean
         default: true
       clean_ccache:
-        description: 'Clean all old CCACHE   🇯🇵 CCACHEに削除'
+        description: 'Clean all old CCACHE.. 🇯🇵 CCACHEに削除'
         required: false
         type: boolean
         default: false
   schedule:
     - cron: '0 19 * * 0'
     
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
   # annawrt 2410
   REPO_IMMORTALWRT_SOURCE_LINK:         ${{ secrets.REPO_IMMORTALWRT_SOURCE_LINK }}
@@ -65,7 +61,7 @@ env:
   PLUGIN_REPO_HEAD:                     ${{ secrets.PLUGIN_REPO_HEAD }}
   PLUGIN_REPO_FLOW:                     ${{ secrets.PLUGIN_REPO_FLOW }}
   # cmcc color sytle for argon
-  ARGON_THEME_CMCC:                     ${{ secrets.ARGON_THEME_CMCC }}
+  ARGON_THEME_RPI:                      ${{ secrets.ARGON_THEME_RPI }}
   # telegram bot
   TELEGRAM_BOT_KEY:                     ${{ secrets.TELEGRAM_BOT_KEY }}
   TELEGRAM_CHAT_ID:                     ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -93,16 +89,13 @@ jobs:
     steps:
     - name: Sync and Wait for Plugin Repo (プラグインリポジトリの同期と待機)
       run: |
-        echo "🔍 Checking last successful sync time..."
-        
+        echo "Checking last successful sync time..."
         LAST_RUN_TIME=$(gh run list --workflow "$PLUGIN_REPO_FLOW" --repo "$PLUGIN_REPO_SLUG" --status success --limit 1 --json updatedAt --jq '.[0].updatedAt')
         DO_SYNC="true"
-        
         if [ -n "$LAST_RUN_TIME" ] && [ "$LAST_RUN_TIME" != "null" ]; then
           LAST_TS=$(date -d "$LAST_RUN_TIME" +%s)
           NOW_TS=$(date +%s)
           DIFF=$((NOW_TS - LAST_TS))
-          
           if [ "$DIFF" -lt 86400 ]; then
             echo "⏭️ Last sync was only $((DIFF / 3600)) hours ago (Success at: $LAST_RUN_TIME). Skipping."
             DO_SYNC="false"
@@ -112,45 +105,35 @@ jobs:
         else
           echo "⚠️ No previous successful run found. Forcing sync."
         fi
-
         if [ "$DO_SYNC" == "true" ]; then
-          echo "🚀 Triggering workflow..."
-
+          echo "Triggering workflow..."
           if ! gh workflow run "$PLUGIN_REPO_FLOW" --repo "$PLUGIN_REPO_SLUG" --ref "$PLUGIN_REPO_HEAD"; then
             echo "❌ Error: Failed to trigger the workflow."
             exit 1
           fi
-            
-          echo "🕵️‍♂️ Waiting for Run ID..."
-          echo "⏳ Max wait time: 10 minutes (60 attempts x 10s)"
-            
+          echo "Waiting for Run ID..."
+          echo "Max wait time: 10 minutes (60 attempts x 10s)"
           FOUND_ID=""
-          
           for i in {1..60}; do
             echo "   Attempt $i/60: Checking for active runs..."
             sleep 10
-            
             RUN_ID=$(gh run list --workflow "$PLUGIN_REPO_FLOW" --repo "$PLUGIN_REPO_SLUG" --limit 1 --json databaseId,status --jq 'map(select(.status != "completed")) | .[0].databaseId')
-              
             if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
               FOUND_ID=$RUN_ID
               echo "✅ Caught the Run ID! Run ID: $FOUND_ID"
               break
             fi
           done
-            
           if [ -z "$FOUND_ID" ]; then
             echo "❌ Error: Timed out after 10 minutes waiting for Run ID"
             echo "   Possible reason: GitHub Actions queue is extremely busy."
             exit 1
           fi
-            
-          echo "👀 Waiting sync..."
-
+          echo "Waiting sync..."
           gh run watch "$FOUND_ID" --repo "$PLUGIN_REPO_SLUG" --exit-status
-          echo "🍽️ Plugin sync complete"
+          echo "Plugin sync complete"
         else
-          echo "😴 Skipping sync to save resources (Recently synced)."
+          echo "Skipping sync to save resources (Recently synced)."
         fi
 
     - name: Checkout (チェックアウト)
@@ -164,27 +147,6 @@ jobs:
         echo "=============================================================================="
         df -hT
         echo "=============================================================================="
-
-    - name: Optimize Disk Space (ディスク容量の最適化)
-      uses: hugoalh/disk-space-optimizer-ghaction@v0.8.1
-      with:
-        operate_sudo: "True"
-        general_include: ".+"
-        general_exclude: |-
-          ^GCC$
-          ^G\+\+$
-          Clang
-          LLVM
-        docker_include: ".+"
-        docker_prune: "True"
-        docker_clean: "True"
-        apt_prune: "True"
-        apt_clean: "True"
-        homebrew_prune: "True"
-        homebrew_clean: "True"
-        npm_prune: "True"
-        npm_clean: "True"
-        os_swap: "True"
 
     - name: Free Disk Space (ディスク空き容量の確保)
       uses: easimon/maximize-build-space@master
@@ -221,7 +183,7 @@ jobs:
         sudo -E apt -yqq autoremove --purge
         sudo -E apt -yqq autoclean
         sudo -E apt -yqq clean
-        sudo -E apt -yqq install zip rename dos2unix libfuse-dev mold cargo
+        sudo -E apt -yqq install zip rename dos2unix libfuse-dev cargo
         sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
         rustup target add aarch64-unknown-linux-musl
         sudo -E systemctl daemon-reload
@@ -287,7 +249,6 @@ jobs:
         rm -rf feeds/packages/lang/golang
         git clone https://github.com/sbwml/packages_lang_golang -b 25.x feeds/packages/lang/golang
         ./scripts/feeds install -a
-        ./scripts/feeds install -a
 
     - name: Load Custom Configuration (カスタム設定の読み込み)
       working-directory: ./openwrt
@@ -298,7 +259,7 @@ jobs:
         rm -rf feeds/packages/net/smartdns
         rm -rf files
         ${{ secrets.REPO_IMMORTALWRT_2410SS_DIFF }}
-        ${{ secrets.ARGON_THEME_CMCC }}
+        ${{ secrets.ARGON_THEME_RPI }}
 
     - name: Restore Config Archive (設定アーカイブの復元)
       if: steps.loadconfig.outcome == 'success' && (github.event.inputs.restore_config == 'true' || contains(github.event.action, 'restore_config')) && !cancelled()
@@ -306,6 +267,17 @@ jobs:
       run: |
         ${{ secrets.RASPBERRYPI_3B_IMWRT2410SS_ARCHIVE }}
         echo "OUTPUT_FILE=diamondwrt-25.12rc1-k6.12-bcm2710-raspberry-pi_3b-configured-sysupgrade" >> $GITHUB_ENV
+
+    - name: Optimization & CCache Configuration
+      working-directory: ./openwrt
+      run: |
+        echo "CONFIG_CCACHE_DIR=\"${{ github.workspace }}/.ccache\"" >> .config
+        export CCACHE_DIR=${{ github.workspace }}/.ccache
+        export CCACHE_BASEDIR=${{ github.workspace }}
+        export CCACHE_COMPRESS=1
+        export CCACHE_COMPRESSLEVEL=6
+        ccache -M 5G
+        ccache -z
 
     - name: Download Packages (パッケージのダウンロード)
       if: steps.loadconfig.outcome == 'success' && !cancelled()
@@ -324,9 +296,6 @@ jobs:
         echo -e "$(nproc) thread compile"
         LDFLAGS="-fuse-ld=mold" make -j$(($(nproc) + 1)) || make -j1 V=s
         echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
-
-    - name: Update Variables (変数の更新)
-      run: |
         echo "OUTPUT_FILE=${OUTPUT_FILE}_${FILE_DATE}" >> $GITHUB_ENV
 
     - name: Check Disk Usage (ディスク使用量の確認)

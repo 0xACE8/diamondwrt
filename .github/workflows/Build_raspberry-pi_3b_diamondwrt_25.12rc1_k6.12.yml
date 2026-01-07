@@ -294,7 +294,7 @@ jobs:
       id: compile
       run: |
         echo -e "$(nproc) thread compile"
-        LDFLAGS="-fuse-ld=mold" make -j$(($(nproc) + 1)) || make -j1 V=s
+        make -j$(nproc) || make -j1 V=s
         echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
         echo "OUTPUT_FILE=${OUTPUT_FILE}_${FILE_DATE}" >> $GITHUB_ENV
 
@@ -511,7 +511,7 @@ jobs:
           const { data: releases } = await github.rest.repos.listReleases({ owner, repo, per_page: 100 });
           
           for (const release of releases.slice(keep_latest)) {
-            console.log(`👋 Deleting Release: ${release.tag_name}`);
+            console.log(`Deleting Release: ${release.tag_name}`);
             await github.rest.repos.deleteRelease({ owner, repo, release_id: release.id });
             try {
               await github.rest.git.deleteRef({ owner, repo, ref: `tags/${release.tag_name}` });

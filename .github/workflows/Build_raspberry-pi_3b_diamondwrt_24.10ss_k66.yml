@@ -140,12 +140,6 @@ jobs:
 
         echo "✨ すべてのクリーンアップ処理が完了しました！"
 
-    - name: Free Disk Space (ディスク空き容量の確保)
-      uses: easimon/maximize-build-space@master
-      with: 
-        root-reserve-mb: 8192
-        swap-size-mb: 1
-
     - name: Check Server Performance (サーバー性能の確認)
       run: |
         echo "⚠️注意⚠️"
@@ -380,7 +374,7 @@ jobs:
         token: ${{ secrets.ACCESS_TOKEN }}
         repository: ${{ github.repository }}
         retain_days: 0
-        keep_minimum_runs: 1
+        keep_minimum_runs: 0
         delete_workflow_pattern: 24.10_snapshots
   
     - name: Delete Old Releases (古いリリースの削除)

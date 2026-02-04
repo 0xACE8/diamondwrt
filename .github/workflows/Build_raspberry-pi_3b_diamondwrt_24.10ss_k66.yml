@@ -208,16 +208,10 @@ jobs:
         [ -d "dl" ] && find dl -size 0 -exec rm -f {} +
         [ -d "dl" ] && rm -rf dl/go-mod-* 2>/dev/null || true
         ${{ secrets.RASPBERRYPI_3B_IMWRT2410SS_PATCHES }}
-        cd feeds/packages
-        git remote add upstream https://github.com/openwrt/packages.git
-        git fetch upstream master
-        git checkout upstream/master -- lang/rust
-        cd ../..
-        ./scripts/feeds update -i
-        rm -rf feeds/packages/lang/golang && git clone https://github.com/sbwml/packages_lang_golang -b 25.x feeds/packages/lang/golang
+        ./scripts/feeds update -a
+        rm -rf feeds/packages/lang/rust && git clone https://github.com/0xACE8/packages_lang_rust -b 1.90.0 feeds/packages/lang/rust
+        rm -rf feeds/packages/lang/golang && git clone https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
         ./scripts/feeds install -a
-        echo "Current Rust definition updated to:"
-        grep "PKG_VERSION:=" feeds/packages/lang/rust/Makefile
 
     - name: Load Custom Configuration (カスタム設定の読み込み)
       working-directory: ./openwrt

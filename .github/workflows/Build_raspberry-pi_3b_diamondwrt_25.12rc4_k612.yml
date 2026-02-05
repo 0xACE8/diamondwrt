@@ -45,7 +45,7 @@ on:
     
 env:
   # annawrt 2410
-  REPO_IMMORTALWRT_2410SS_LINK:         ${{ secrets.REPO_IMMORTALWRT_2410SS_LINK }}
+  REPO_IMMORTALWRT_SOURCE_LINK:         ${{ secrets.REPO_IMMORTALWRT_SOURCE_LINK }}
   REPO_IMMORTALWRT_2410SS_TREE:         ${{ secrets.REPO_IMMORTALWRT_2410SS_TREE }}
   REPO_IMMORTALWRT_2512SS_HEAD:         ${{ secrets.REPO_IMMORTALWRT_2512SS_HEAD }}
   REPO_IMMORTALWRT_2410SS_DIFF:         ${{ secrets.REPO_IMMORTALWRT_2410SS_DIFF }}
@@ -178,7 +178,7 @@ jobs:
       working-directory: ./
       run: |
         df -hT $PWD
-        git clone --depth 1 $REPO_IMMORTALWRT_2410SS_LINK -b $REPO_IMMORTALWRT_2512SS_HEAD openwrt
+        git clone --depth 1 $REPO_IMMORTALWRT_SOURCE_LINK -b $REPO_IMMORTALWRT_2512SS_HEAD openwrt
         # Remove China Mirrors (中国国内ミラーの削除)
         cd openwrt
         [ -f "scripts/projectsmirrors.json" ] && sed -i '/.cn\//d; /tencent/d; /aliyun/d' scripts/projectsmirrors.json

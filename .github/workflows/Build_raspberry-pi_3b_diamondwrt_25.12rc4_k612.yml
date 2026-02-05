@@ -9,7 +9,7 @@
 # 説明: GitHub Actionsのモジュール化を活用し、プライバシーとセキュリティを確保したOpenWrtビルド。
 #
 
-name: Build cmcc_xr30-emmc diamondwrt 25.12 rc4 kernel 6.12.x actions.
+name: Build raspberry-pi_3b diamondwrt 25.12 rc4 kernel 6.12.x actions.
 
 on:
   workflow_dispatch:

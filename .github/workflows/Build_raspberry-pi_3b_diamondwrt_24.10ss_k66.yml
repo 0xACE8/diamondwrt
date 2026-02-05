@@ -376,7 +376,7 @@ jobs:
         repository: ${{ github.repository }}
         retain_days: 0
         keep_minimum_runs: 0
-        delete_workflow_pattern: 24.10_snapshots
+        delete_workflow_pattern: diamondwrt_24.10ss_k66
   
     - name: Delete Old Releases (古いリリースの削除)
       if: steps.compile.outcome == 'success' && env.INPUT_RELEASE == 'true'

@@ -142,7 +142,7 @@ jobs:
       id: check_env
       run: |
         CPU_MODEL=$(cat /proc/cpuinfo | grep -m1 "model name" | awk -F: '{print $2}' | sed 's/^[ \t]*//')
-        FREE_SPACE=$(df -GB / | awk 'NR==2 {print $4}' | sed 's/GB//')
+        FREE_SPACE=$(df --block-size=1G / | awk 'NR==2 {print $4}')
         echo "⚠️注意⚠️"
         echo "サーバーのリソースは有限です。プラグインの過剰な選択はCPU高負荷の原因となります。"
         echo -e "既知のCPUモデル（降顺）: 7763，8370C，8272CL，8171M，E5-2673\n"
@@ -158,6 +158,7 @@ jobs:
         # 兼容更多磁盘命名方式
         echo "ディスクデバイス数: $(lsblk -dn -o NAME | grep -E '^sd|^vd|^nvme' | wc -l)"
         df -hT
+        echo ""
         echo "------------------サーバー最適化の実行結果------------------"
         if [[ "$CPU_MODEL" != *"EPYC 7763"* ]]; then
           echo "❌ ハードウェア不適合、ジョブを停止します。"

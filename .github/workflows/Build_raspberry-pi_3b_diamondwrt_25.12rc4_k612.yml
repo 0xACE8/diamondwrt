@@ -404,7 +404,7 @@ jobs:
         repository: ${{ github.repository }}
         retain_days: 0
         keep_minimum_runs: 1
-        delete_workflow_pattern: 25.12_k612
+        delete_workflow_pattern: "25.12 rc4 kernel 6.12.x"
   
     - name: Delete Old Releases (古いリリースの削除)
       if: steps.compile.outcome == 'success' && env.INPUT_RELEASE == 'true'

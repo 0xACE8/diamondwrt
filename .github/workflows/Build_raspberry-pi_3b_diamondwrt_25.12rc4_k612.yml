@@ -79,7 +79,7 @@ env:
   # hardware & repo info
   DEVICE_NAME:                          Raspberry-Pi_3B
   TARGET_CHIP:                          bcm2710
-  TARGET_DISK:                          2G-TF
+  TARGET_DISK:                          8G_TF
   SOURCE_CODE:                          immortalwrt
   KERNEL_VERS:                          kernel_6.12
   OUTPUT_FILE:                          diamondwrt-25.12rc4-k6.12-bcm2710-raspberry-pi_3b-sysupgrade
@@ -270,7 +270,7 @@ jobs:
       working-directory: ./openwrt
       run: |
         ${{ secrets.RASPBERRYPI_3B_IMWRT2410SS_ARCHIVE }}
-        echo "OUTPUT_FILE=diamondwrt-25.12rc4-k6.12-bcm2710-raspberry-pi_3b-configured-sysupgrade" >> $GITHUB_ENV
+        echo "OUTPUT_FILE=diamondwrt-im25.12rc5-k6.12-bcm2710-raspberry-pi_3b-8g_tf-configured-sysupgrade" >> $GITHUB_ENV
 
     - name: Download Packages (パッケージのダウンロード)
       if: steps.loadconfig.outcome == 'success' && !cancelled()

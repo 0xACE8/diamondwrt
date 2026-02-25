@@ -241,7 +241,6 @@ jobs:
         # rtl88x2bu support
         git clone -b openwrt-24.10.5 https://github.com/mirobiala/rtl88x2bu-cl package/kernel/rtl88x2bu-cl
         ./scripts/feeds update -a
-        rm -rf feeds/packages/lang/rust && git clone https://github.com/0xACE8/packages_lang_rust -b 1.90.0 feeds/packages/lang/rust
         rm -rf feeds/packages/lang/golang && git clone https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
         ./scripts/feeds install -a
 
@@ -283,7 +282,6 @@ jobs:
         make download -j$(nproc)
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
-        # make download -j8
 
     - name: Keepalive Cache Refresh (キャッシュ更新のマーク付け)
       if: env.IS_KEEPALIVE == 'true'
@@ -409,7 +407,7 @@ jobs:
         token: ${{ secrets.ACCESS_TOKEN }}
         repository: ${{ github.repository }}
         retain_days: 0
-        keep_minimum_runs: 1
+        keep_minimum_runs: 0
         delete_workflow_pattern: 24.10ss_k66
   
     - name: Delete Old Releases (古いリリースの削除)

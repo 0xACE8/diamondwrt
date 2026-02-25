@@ -145,7 +145,7 @@ jobs:
         FREE_SPACE=$(df --block-size=1G / | awk 'NR==2 {print $4}')
         echo "⚠️注意⚠️"
         echo "サーバーのリソースは有限です。プラグインの過剰な選択はCPU高負荷の原因となります。"
-        echo -e "既知のCPUモデル（降顺）: 7763，8370C，8272CL，8171M，E5-2673\n"
+        echo -e "既知のCPUモデル（降顺）: 9V74, 7763，8370C，8272CL，8171M，E5-2673\n"
         echo "-------------------------CPU 情報---------------------------"
         echo "CPUの物理数  : $(cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l)"
         echo "CPUコア数    : $(nproc)"
@@ -160,8 +160,12 @@ jobs:
         df -hT
         echo ""
         echo "------------------サーバー最適化の実行結果------------------"
-        if [[ "$CPU_MODEL" != *"EPYC 7763"* ]]; then
+        if [[ "$CPU_MODEL" != *"EPYC 7763"* && "$CPU_MODEL" != *"EPYC 9V74"* ]]; then
           echo "❌ ハードウェア不適合、ジョブを停止します。"
+          gh workflow run "${{ github.workflow }}" --ref "${{ github.ref_name }}"
+          sleep 15
+          gh run cancel ${{ github.run_id }}
+          sleep 10
           exit 1
         fi
         echo "✅ ハードウェアチェック完了、実行を継続。"

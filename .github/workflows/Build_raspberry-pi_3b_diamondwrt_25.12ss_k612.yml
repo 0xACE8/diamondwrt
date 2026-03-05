@@ -320,12 +320,10 @@ jobs:
       id: organize
       run: |
         cd openwrt/bin/targets/*/*
-        FIRMWARE_FILE=$(ls *sysupgrade.* 2>/dev/null | head -n 1)
-        EXT="${FIRMWARE_FILE##*.}"
-        ls -A | grep -v "$FIRMWARE_FILE" | xargs rm -rdf
-        mv "$FIRMWARE_FILE" "${{ env.OUTPUT_FILE }}.$EXT"
-        sha512sums ${{ secrets.ACCESS_SHA512SUM }} sha512sums "${{ env.OUTPUT_FILE }}.$EXT"
-        ${{ secrets.ACCESS_REPACKAGE }} "${{ env.OUTPUT_FILE }}.$EXT"
+        ls | grep -v *.gz | xargs rm -rdf
+        sha512sums ${{ secrets.ACCESS_SHA512SUM }} sha512sums *.gz
+        ls | grep -v sha512sums* | xargs rm -rdf
+        ${{ secrets.ACCESS_REPACKAGE }} ${{ env.OUTPUT_FILE }}.img.gz
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
     - name: Upload to Artifacts (Artifactに保存)

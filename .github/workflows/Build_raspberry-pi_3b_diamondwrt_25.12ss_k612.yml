@@ -260,8 +260,11 @@ jobs:
         cat <<'EOF' > .config
         ${{ secrets.RASPBERRYPI_3B_IMWRT2512SS_PROFILE }}
         EOF
+        echo "config done"
         ${{ secrets.REPO_IMMORTALWRT_2410SS_DIFF }}
+        echo "diff done"
         ${{ secrets.ARGON_THEME_RPI }}
+        echo "theme done"
 
     - name: Update Cache (キャッシュの更新)
       if: steps.cache-toolchain.outputs.cache-hit == 'true' || steps.cache-toolchain.outputs.cache-matched-key != ''

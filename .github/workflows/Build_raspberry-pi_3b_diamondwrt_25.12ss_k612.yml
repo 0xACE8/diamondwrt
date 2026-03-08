@@ -123,6 +123,15 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Delete Old Workflows (古いワークフローの削除)
+      uses: Mattraks/delete-workflow-runs@main
+      with:
+        token: ${{ secrets.ACCESS_TOKEN }}
+        repository: ${{ github.repository }}
+        retain_days: 0
+        keep_minimum_runs: 1
+        delete_workflow_pattern: "25.12ss kernel 6.12.x"
+
     - name: Clean Up All Old Caches (全ての旧キャッシュを削除)
       if: |
         github.event.inputs.clean_cache == 'true' || 
@@ -403,15 +412,6 @@ jobs:
         curl -s -o /dev/null -X GET "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_KEY }}/sendMessage" \
           -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
           -d text="$(echo "$MSG" | sed 's/ /%20/g')"
-
-    - name: Delete Old Workflows (古いワークフローの削除)
-      uses: Mattraks/delete-workflow-runs@main
-      with:
-        token: ${{ secrets.ACCESS_TOKEN }}
-        repository: ${{ github.repository }}
-        retain_days: 0
-        keep_minimum_runs: 1
-        delete_workflow_pattern: "25.12 rc4 kernel 6.12.x"
   
     - name: Delete Old Releases (古いリリースの削除)
       if: steps.compile.outcome == 'success' && env.INPUT_RELEASE == 'true'

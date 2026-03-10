@@ -198,9 +198,9 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo -E apt -yqq update
-        sudo -E apt -yqq install zip rename dos2unix libfuse-dev python3-netifaces libcrypt-dev libncurses5-dev cargo
+        sudo -E apt -yqq install zip rename dos2unix libfuse-dev python3-netifaces libcrypt-dev libncurses5-dev #cargo
         sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
-        rustup target add aarch64-unknown-linux-musl
+        # rustup target add aarch64-unknown-linux-musl
         sudo timedatectl set-timezone "$TZ"
         sudo chown $USER:$GROUPS $GITHUB_WORKSPACE
         git config --global url."https://$ACCESS_TOKEN@github.com/0xACE8/".insteadOf "https://github.com/0xACE8/"

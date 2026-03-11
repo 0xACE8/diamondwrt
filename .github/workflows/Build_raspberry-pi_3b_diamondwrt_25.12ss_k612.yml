@@ -201,8 +201,11 @@ jobs:
         sudo -E apt -yqq install zip rename dos2unix libfuse-dev python3-netifaces libcrypt-dev libncurses5-dev cargo
         sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
         rustup target add aarch64-unknown-linux-musl
+        cargo install sccache
         sudo timedatectl set-timezone "$TZ"
         sudo chown $USER:$GROUPS $GITHUB_WORKSPACE
+        echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+        echo "SCCACHE_DIR=$GITHUB_WORKSPACE/openwrt/.sccache" >> $GITHUB_ENV
         git config --global url."https://$ACCESS_TOKEN@github.com/0xACE8/".insteadOf "https://github.com/0xACE8/"
         git config --global core.compression 0
 
@@ -235,6 +238,7 @@ jobs:
         path: |
           openwrt/.cache
           openwrt/.ccache
+          openwrt/.sccache
           openwrt/staging_dir/host*
           openwrt/staging_dir/tool*
           openwrt/dl

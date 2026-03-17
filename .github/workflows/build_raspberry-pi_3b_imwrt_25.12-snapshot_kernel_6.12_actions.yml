@@ -176,7 +176,7 @@ jobs:
         # add hardware driver
         ${{ env.NEW_HW_SUPOT }}
         ./scripts/feeds update -a
-        # # packages lang update (rust and goland)
+        # packages lang update (rust and goland)
         ${{ env.LANGS_UPDATE }}
         ./scripts/feeds install -a
         # device patch

@@ -69,7 +69,7 @@ env:
   INIT_ENV_VAR:         ${{ github.workspace }}/${{ secrets.INIT_ENVIRONMENT }}
   REMOV_CN_SRC:         ${{ github.workspace }}/${{ secrets.REMOVE_CN_SOURCE }}
   GET_KER_VERS:         ${{ github.workspace }}/${{ secrets.GET_KER_PATCHVER }}
-  LANGS_UPDATE:         ${{ github.workspace }}/${{ secrets.PAK_LANGS_UPDATE }}
+  UPDATE_LANGS:         ${{ github.workspace }}/${{ secrets.PAK_LANGS_UPDATE }}
   FIRMWARE_ORG:         ${{ github.workspace }}/${{ secrets.ORGANIZE_FW_FILE }}
   CALC_RUNTIME:         ${{ github.workspace }}/${{ secrets.CALC_RUNING_TIME }}
   ## device configure
@@ -170,6 +170,11 @@ jobs:
         GH_TOKEN: ${{ env.ACCESS_TOKEN }}
       run: |
         ${{ env.DWLOAD_CACHE }}
+        ls -al
+        find . -path "*/dl/go-mod-*" -exec rm -rf {} + 2>/dev/null || true
+        ls -al dl
+        [ -d ".sccache" ] && rm -rf .sccache || true
+        ls -al
 
     - name: Update & Install Feeds (フィードの更新とインストール)
       working-directory: ./openwrt
@@ -178,7 +183,7 @@ jobs:
         ${{ env.NEW_HW_SUPOT }}
         ./scripts/feeds update -a
         # packages lang update (rust and goland)
-        ${{ env.LANGS_UPDATE }}
+        ${{ env.UPDATE_LANGS }}
         ./scripts/feeds install -a
         # device patch
         ${{ env.PRIVATEPATCH }}/${{ env.TARGET_MODEL }}/${{ env.DEVICE_PATCH }}

@@ -210,6 +210,13 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
+    - name: Fix IPKG_INSTROOT for network.sh scripts
+      run: |
+          # 遍历所有引用了 network.sh 的 init 和 defaults 脚本，强制在 Host 打包阶段跳过执行
+          find package/ feeds/ -type f \( -name "*.init" -o -name "*.defaults" -o -name "*.sh" \) | xargs grep -l "network.sh" | while read -r file; do
+            sed -i '1a\\[ -n "$IPKG_INSTROOT" ] && exit 0' "$file"
+          done
+
     - name: Compile Firmware (ファームウェアのコンパイル)
       working-directory: ./openwrt
       id: compile

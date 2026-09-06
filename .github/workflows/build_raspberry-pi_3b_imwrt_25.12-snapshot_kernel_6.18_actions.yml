@@ -126,7 +126,7 @@ jobs:
         repository: ${{ env.RUN_REF_REPO }}
         retain_days: 0
         keep_minimum_runs: 0
-        delete_workflow_pattern: "raspberry-pi_3b imwrt 25.12-snapshot kernel 6.12"
+        delete_workflow_pattern: "raspberry-pi_3b imwrt 25.12-snapshot kernel 6.18"
 
     - name: Check Server Performance (サーバー性能の確認)
       id: check_env

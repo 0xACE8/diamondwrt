@@ -18,7 +18,7 @@ on:
       restore_config:
         description: 'RESTORE_BAKCONF. 🇯🇵 環境設定復元'
         type: boolean
-        default: true
+        default: false
       #boost_wifi_5g:
       #  description: 'BOOST_WIFI5G_SG. 🇯🇵 ５Ｇ信号増幅'
       #  type: boolean
